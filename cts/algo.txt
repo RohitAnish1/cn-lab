@@ -1,0 +1,105 @@
+Server:
+START  
+
+    DEFINE PORT = 12345  
+    DEFINE BUFFER_SIZE = 1024  
+
+    DECLARE sockfd  
+    DECLARE server_addr, client_addr (socket address structures)  
+    DECLARE buffer[BUFFER_SIZE]  
+    DECLARE addr_len = size of client_addr  
+
+    // Create UDP socket  
+    CALL socket(AF_INET, SOCK_DGRAM, 0) → sockfd  
+    IF sockfd < 0 THEN  
+        PRINT "Socket creation failed"  
+        EXIT  
+
+    // Initialize server and client address structures  
+    SET server_addr and client_addr to 0  
+
+    // Configure server address  
+    SET server_addr.sin_family = AF_INET  
+    SET server_addr.sin_addr.s_addr = INADDR_ANY  
+    SET server_addr.sin_port = htons(PORT)  
+
+    // Bind socket to the server address  
+    CALL bind(sockfd, server_addr, size(server_addr))  
+    IF bind fails THEN  
+        PRINT "Bind failed"  
+        CLOSE sockfd  
+        EXIT  
+
+    PRINT "Server is running and waiting for time requests on port PORT..."  
+
+    WHILE true DO  
+        CLEAR buffer  
+
+        // Receive message from client  
+        CALL recvfrom(sockfd, buffer, BUFFER_SIZE, 0, client_addr, addr_len) → n  
+        IF n < 0 THEN  
+            PRINT "Receive failed"  
+            CONTINUE  
+
+        PRINT "Received request from client: " + client IP  
+
+        // Get current system time  
+        SET current_time = CALL time()  
+        SET time_str = CALL ctime(current_time)  
+
+        // Send time response to client  
+        CALL sendto(sockfd, time_str, length(time_str), 0, client_addr, addr_len)  
+        PRINT "Sent time to client: " + time_str  
+
+    END WHILE  
+
+    CLOSE sockfd  
+
+END  
+Client:
+START  
+
+    DEFINE PORT = 12345  
+    DEFINE BUFFER_SIZE = 1024  
+
+    DECLARE sockfd  
+    DECLARE server_addr (socket address structure)  
+    DECLARE buffer[BUFFER_SIZE]  
+    DECLARE request_message = "TIME_REQUEST"  
+
+    // Create UDP socket  
+    CALL socket(AF_INET, SOCK_DGRAM, 0) → sockfd  
+    IF sockfd < 0 THEN  
+        PRINT "Socket creation failed"  
+        EXIT  
+
+    // Initialize server address structure  
+    SET server_addr to 0  
+
+    // Configure server address  
+    SET server_addr.sin_family = AF_INET  
+    SET server_addr.sin_port = htons(PORT)  
+    SET server_addr.sin_addr.s_addr = inet_addr("127.0.0.1")  
+
+    // Send time request to server  
+    CALL sendto(sockfd, request_message, length(request_message), 0, server_addr, size(server_addr))  
+    IF send fails THEN  
+        PRINT "Send failed"  
+        CLOSE sockfd  
+        EXIT  
+
+    PRINT "Time request sent to server."  
+
+    // Receive response from server  
+    CALL recvfrom(sockfd, buffer, BUFFER_SIZE, 0, NULL, NULL) → n  
+    IF n < 0 THEN  
+        PRINT "Receive failed"  
+        CLOSE sockfd  
+        EXIT  
+
+    SET buffer[n] = '\0' // Null-terminate the received string  
+    PRINT "Current time from server: " + buffer  
+
+    CLOSE sockfd  
+
+END  

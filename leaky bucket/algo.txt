@@ -1,27 +1,26 @@
-BEGIN
-    Define total number of packets
-    Function randm(a) generates a random packet size
-    
-    Initialize:
-        - Packet sizes array
-        - Remaining packet size variable
-        - User-defined output rate and bucket size
+START  
+    INPUT bucket_capacity, leak_rate, num_packets  
+    DECLARE bucket = 0  
 
-    Generate random packet sizes (between 10 to 60 bytes)
+    PRINT "Time | Incoming | Bucket | Leaked | Remaining"  
 
-    Print generated packet sizes
+    FOR each packet at time t:
+        bucket = bucket + incoming_packet_size  
+        
+        IF bucket > bucket_capacity:
+            PRINT "Overflow: Dropped excess packets"  
+            bucket = bucket_capacity  
 
-    Get user input:
-        - Output rate
-        - Bucket size
+        leaked = min(bucket, leak_rate)  
+        bucket = bucket - leaked  
 
-    FOR each packet:
-        IF (packet size + remaining size) exceeds bucket capacity:
-            - Reject the packet
-        ELSE:
-            - Add packet size to remaining size
-            - Simulate transmission in time units
-            - Send packets based on output rate until empty
-            - Display transmission progress
-
-END
+        PRINT time, incoming_packet_size, bucket, leaked, remaining  
+      
+    // Empty the remaining packets
+    WHILE bucket > 0:  
+        leaked = min(bucket, leak_rate)  
+        bucket = bucket - leaked  
+        PRINT time, 0, bucket, leaked, remaining  
+      
+    PRINT "Bucket is empty"  
+END  

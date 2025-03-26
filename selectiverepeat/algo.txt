@@ -1,76 +1,56 @@
-Server:
-BEGIN
-    Create a TCP socket
+START  
+    DEFINE WINDOW_SIZE = 4  
+    DEFINE TOTAL_FRAMES = 10  
+    DEFINE LOSS_PROBABILITY = 20%  
 
-    Initialize server structure:
-        - Set address family to AF_INET
-        - Set port to 9009
-        - Bind the socket
+    FUNCTION send_frame(frame_number):  
+        PRINT "Sending frame [frame_number]..."  
+        WAIT for 1 second (simulate delay)  
+        GENERATE random number between 0 and 99  
+        IF random number < LOSS_PROBABILITY:  
+            PRINT "Frame [frame_number] lost during transmission!"  
+            RETURN 0 (frame lost)  
+        ELSE:  
+            PRINT "Frame [frame_number] sent successfully."  
+            RETURN 1 (frame sent)  
+    END FUNCTION  
 
-    If binding fails, print "Binding failed" and exit
+    FUNCTION receive_ack(frame_number):  
+        PRINT "Receiving acknowledgment for frame [frame_number]..."  
+        WAIT for 1 second (simulate delay)  
+        GENERATE random number between 0 and 99  
+        IF random number < LOSS_PROBABILITY:  
+            PRINT "Acknowledgment for frame [frame_number] lost!"  
+            RETURN 0 (ACK lost)  
+        ELSE:  
+            PRINT "Acknowledgment for frame [frame_number] received."  
+            RETURN 1 (ACK received)  
+    END FUNCTION  
 
-    Listen for client connection
-    Accept client connection
+    FUNCTION selective_repeat_arq():  
+        INITIALIZE sent_frames[TOTAL_FRAMES] to 0 (track sent frames)  
+        INITIALIZE ack_received[TOTAL_FRAMES] to 0 (track received ACKs)  
+        INITIALIZE base = 0 (sliding window start)  
 
-    Print "Server Up - Selective Repeat Scheme"
+        WHILE base < TOTAL_FRAMES:  
+            FOR each frame i from base to base + WINDOW_SIZE:  
+                IF frame i is not sent:  
+                    CALL send_frame(i)  
+                    UPDATE sent_frames[i]  
 
-    Initialize:
-        - Message buffer for sending messages
-        - Timer for timeouts
-        - Array to track received acknowledgments
+            FOR each frame i from base to base + WINDOW_SIZE:  
+                IF frame i is sent but not acknowledged:  
+                    CALL receive_ack(i)  
+                    UPDATE ack_received[i]  
 
-    WHILE total acknowledged < 9:
-        FOR each window of 3 messages:
-            Construct and send each message
+            WHILE base < TOTAL_FRAMES AND ack_received[base] == 1:  
+                PRINT "Sliding window forward. Frame [base] fully acknowledged."  
+                INCREMENT base  
 
-        FOR each message in the window:
-        (Retry until acknowledgment is received)
-            Wait for acknowledgment using `select()`
-            IF timeout occurs:
-                Resend the lost message
-            ELSE IF acknowledgment is received:
-                IF acknowledgment is corrupted:
-                    Resend the corresponding message
-                ELSE:
-                    Increment the total acknowledged messages
+        PRINT "All frames sent and acknowledged successfully."  
+    END FUNCTION  
 
-    Close socket connection
-END
-Client:
-BEGIN
-    Create a TCP socket
-
-    Initialize client structure:
-        - Set address family to AF_INET
-        - Set port to 9009
-        - Connect to the server
-
-    If connection fails, print "Connection failed" and exit
-
-    Print "Client - with individual acknowledgement scheme"
-
-    Initialize:
-        - Acknowledgment message templates
-        - Buffer for received messages
-        - Counter for tracking received messages
-        - Fault simulation function
-
-    WHILE count < 8:
-        Clear buffer
-
-        IF simulating message loss:
-            Skip reading and continue
-
-        Read message from server
-
-        Print received message
-
-        Simulate corruption with a probability of 25%
-
-        IF message is corrupted:
-            Send a negative acknowledgment
-        ELSE:
-            Send a positive acknowledgment and increment count
-
-    Close socket connection
-END
+    MAIN FUNCTION:  
+        INITIALIZE random number generator  
+        CALL selective_repeat_arq()  
+    END  

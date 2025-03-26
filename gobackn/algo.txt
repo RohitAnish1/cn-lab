@@ -1,102 +1,65 @@
 Server:
-BEGIN
-    Create a TCP socket
-    Initialize server structure:
-        - Set address family to AF_INET
-        - Set port to 9009
-        - Set IP address to INADDR_ANY
+START  
+    INITIALIZE server socket  
+    BIND socket to PORT 8080  
+    LISTEN for incoming client connection  
 
-    Bind the socket to the address
-    If binding fails, print "Binding failed" and exit
+    PRINT "Waiting for connection..."  
+    ACCEPT client connection  
+    PRINT "Connection established"  
 
-    Print "Server Up"
-    Indicate Go-Back-N (N=3) for 10 messages
+    WHILE true:  
+        CLEAR buffer  
+        READ packet from client  
 
-    Listen for client connections
-    Accept a client connection
+        IF no packet received:  
+            BREAK  
 
-    Initialize:
-        - Frame counter i = -1
-        - Buffers for messages
-        - File descriptor sets for select()
+        EXTRACT packet number from buffer  
+        PRINT "Received packet [packet number]"  
 
-    LOOP until all messages are sent:
-        Increment i
-        Construct message "server message : <i>"
-        Send message to client
-        Delay for synchronization
+        SIMULATE ACK loss with 30% probability  
+        IF ACK lost:  
+            PRINT "ACK for packet [packet number] lost!"  
+        ELSE:  
+            WAIT for 1 second (processing delay)  
+            PRINT "ACK sent for packet [packet number]"  
+            SEND ACK back to client  
 
-        Increment i
-        Construct next message
-        Send to client
-        Delay for synchronization
+    CLOSE connection  
+END  
 
-        Increment i
-        Construct next message
-        Send to client
-
-        Initialize timeout for acknowledgment (2 seconds)
-        Use select() to check for client acknowledgment
-
-        IF timeout occurs THEN
-            Print "Going back from i: timeout"
-            Retransmit from i-3
-            Restart loop
-        ELSE
-            Read acknowledgment from client
-            Print received message
-            Increment i
-            Continue sending
-
-        Check final acknowledgments:
-        Initialize timeout for final 2 messages (3 seconds)
-        Use select() to check acknowledgment
-
-        IF timeout occurs THEN
-            Print "Going back from i: timeout on last 2"
-            Retransmit last 2 frames
-            Restart acknowledgment check
-        ELSE
-            Read acknowledgment messages
-            Print received messages
-
-    Close client socket
-    Close server socket
-END
 Client:
-BEGIN
-    Create a TCP socket
+START  
+    CREATE client socket  
+    CONNECT to server at 127.0.0.1:8080  
+    PRINT "Connected to server"  
 
-    Initialize client structure:
-        - Set address family to AF_INET
-        - Set port to 9009
-        - Set IP address to 127.0.0.1 (localhost)
+    SET TIMEOUT to 3 seconds for ACK reception  
+    INITIALIZE base = 1, next_to_send = 1, packets_acked = 0  
 
-    Connect to server
-    If connection fails, print "Connection failed" and exit
+    WHILE packets_acked < TOTAL_PACKETS:  
+        WHILE next_to_send < base + WINDOW_SIZE AND next_to_send <= TOTAL_PACKETS:  
+            CLEAR buffer  
+            PRINT "Sending packet [next_to_send]"  
+            SEND packet to server  
+            INCREMENT next_to_send  
 
-    Print "Client - with individual acknowledgment scheme"
+        CLEAR buffer  
+        WAIT for ACK from server  
 
-    Initialize:
-        - Message buffer for acknowledgments
-        - Flag to simulate packet loss
+        IF ACK received:  
+            EXTRACT ACK number  
+            PRINT "ACK received for packet [ACK number]"  
 
-    FOR each message from 0 to 9:
-        Clear buffers
+            IF ACK matches base:  
+                UPDATE base = ACK + 1  
+                UPDATE packets_acked = ACK  
+        ELSE:  
+            PRINT "Timeout! Retransmitting from packet [base]"  
+            RESET next_to_send to base for retransmission  
 
-        IF packet 8 and flag is set THEN
-            Simulate packet loss by skipping read
-            Reset flag
-        ELSE
-            Read message from server
+    PRINT "All packets sent successfully"  
+    CLOSE socket connection  
+END  
 
-        IF received message is out of order THEN
-            Print "Discarded as out of order"
-            Decrement counter to request retransmission
-        ELSE
-            Print received message
-            Construct acknowledgment "acknowledgementof-<i>"
-            Send acknowledgment to server
-
-    Close socket
-END

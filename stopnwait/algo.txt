@@ -1,74 +1,18 @@
-Server:
-BEGIN
-    Parse command-line argument for PORT
-    Convert PORT argument to integer
-    
-    Initialize server socket using SOCK_DGRAM
-    Configure server address structure:
-        - Set address family to AF_INET
-        - Set port to given PORT
-        - Set IP address to 127.0.0.1
-    Bind socket to server address
-    Define variable frame_id ← 0
+START  
+    SET TOTAL_PACKETS, TIMEOUT  
+    packet = 1  
 
-    WHILE true DO
-        Receive frame from client
-        IF frame is received AND it is a data frame (frame_kind = 1) AND sequence number matches frame_id THEN
-            Display received frame content
-            
-            Prepare ACK frame:
-                - Set frame_kind = 0 (ACK)
-                - Set sequence number = 0
-                - Set acknowledgment number = received sequence number + 1
-            Send ACK frame to client
-            Display "ACK Sent"
-        ELSE
-            Display "Frame Not Received"
-        ENDIF
-        Increment frame_id
-    ENDWHILE
-    
-    Close server socket
-END
-Client:
-BEGIN
-    Parse command-line argument for PORT
-    Convert PORT argument to integer
-    
-    Initialize client socket using SOCK_DGRAM
-    Configure server address structure:
-        - Set address family to AF_INET
-        - Set port to given PORT
-        - Set IP address to 127.0.0.1
+    WHILE packet <= TOTAL_PACKETS:  
+        PRINT "Sender: Sending packet [packet]"  
 
-    Define variables:
-        - frame_id ← 0
-        - ack_received ← 1
+        WAIT for ACK  
+        IF ACK is received:  
+            PRINT "Receiver: ACK for packet [packet] received"  
+            MOVE to next packet  
+        ELSE:  
+            PRINT "Receiver: ACK for packet [packet] lost! Retransmitting..."  
+            WAIT for TIMEOUT  
+            RESEND packet  
 
-    WHILE true DO
-        IF ack_received = 1 THEN
-            Prompt user for data input
-            Store input in a packet
-            Construct frame:
-                - Set frame_kind = 1 (Data Frame)
-                - Set sequence number = frame_id
-                - Set acknowledgment number = 0
-            Send frame to server
-            Display "Frame Sent"
-        ENDIF
-
-        Wait for acknowledgment from server
-        IF acknowledgment received AND sequence number = 0 AND ACK = frame_id + 1 THEN
-            Display "ACK Received"
-            Set ack_received ← 1
-        ELSE
-            Display "ACK Not Received"
-            Set ack_received ← 0
-        ENDIF
-
-        Increment frame_id
-    ENDWHILE
-
-    Close client socket
-END
-
+    PRINT "All packets sent successfully!"  
+END  

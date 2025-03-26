@@ -1,0 +1,63 @@
+START  
+
+    DEFINE INFINITY = 9999  
+    DEFINE MAX = 10  
+
+    DECLARE cost[MAX][MAX], dist[MAX][MAX], next_hop[MAX][MAX]  
+    DECLARE nodes (number of routers)  
+
+    FUNCTION initialize():  
+        FOR i = 0 TO nodes - 1:  
+            FOR j = 0 TO nodes - 1:  
+                SET dist[i][j] = cost[i][j]  
+                SET next_hop[i][j] = j  
+        END FOR  
+    END FUNCTION  
+
+    FUNCTION updateRoutes():  
+        DECLARE updated  
+        REPEAT:  
+            SET updated = 0  
+            FOR i = 0 TO nodes - 1:  
+                FOR j = 0 TO nodes - 1:  
+                    FOR k = 0 TO nodes - 1:  
+                        IF dist[i][j] > dist[i][k] + dist[k][j]:  
+                            UPDATE dist[i][j] = dist[i][k] + dist[k][j]  
+                            UPDATE next_hop[i][j] = next_hop[i][k]  
+                            SET updated = 1  
+                        END IF  
+                    END FOR  
+                END FOR  
+            END FOR  
+        UNTIL updated = 0  
+    END FUNCTION  
+
+    FUNCTION display():  
+        FOR i = 0 TO nodes - 1:  
+            PRINT "Router i's Routing Table:"  
+            PRINT "Destination | Cost | Next Hop"  
+            FOR j = 0 TO nodes - 1:  
+                PRINT (j+1, dist[i][j], next_hop[i][j]+1)  
+            END FOR  
+        END FOR  
+    END FUNCTION  
+
+    MAIN FUNCTION:  
+        PRINT "Enter the number of routers: "  
+        READ nodes  
+
+        PRINT "Enter the cost matrix (9999 for no direct link):"  
+        FOR i = 0 TO nodes - 1:  
+            FOR j = 0 TO nodes - 1:  
+                READ cost[i][j]  
+                IF i == j THEN  
+                    SET cost[i][j] = 0  
+                END IF  
+            END FOR  
+        END FOR  
+
+        CALL initialize()  
+        CALL updateRoutes()  
+        CALL display()  
+
+    END  
