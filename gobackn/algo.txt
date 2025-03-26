@@ -1,0 +1,102 @@
+Server:
+BEGIN
+    Create a TCP socket
+    Initialize server structure:
+        - Set address family to AF_INET
+        - Set port to 9009
+        - Set IP address to INADDR_ANY
+
+    Bind the socket to the address
+    If binding fails, print "Binding failed" and exit
+
+    Print "Server Up"
+    Indicate Go-Back-N (N=3) for 10 messages
+
+    Listen for client connections
+    Accept a client connection
+
+    Initialize:
+        - Frame counter i = -1
+        - Buffers for messages
+        - File descriptor sets for select()
+
+    LOOP until all messages are sent:
+        Increment i
+        Construct message "server message : <i>"
+        Send message to client
+        Delay for synchronization
+
+        Increment i
+        Construct next message
+        Send to client
+        Delay for synchronization
+
+        Increment i
+        Construct next message
+        Send to client
+
+        Initialize timeout for acknowledgment (2 seconds)
+        Use select() to check for client acknowledgment
+
+        IF timeout occurs THEN
+            Print "Going back from i: timeout"
+            Retransmit from i-3
+            Restart loop
+        ELSE
+            Read acknowledgment from client
+            Print received message
+            Increment i
+            Continue sending
+
+        Check final acknowledgments:
+        Initialize timeout for final 2 messages (3 seconds)
+        Use select() to check acknowledgment
+
+        IF timeout occurs THEN
+            Print "Going back from i: timeout on last 2"
+            Retransmit last 2 frames
+            Restart acknowledgment check
+        ELSE
+            Read acknowledgment messages
+            Print received messages
+
+    Close client socket
+    Close server socket
+END
+Client:
+BEGIN
+    Create a TCP socket
+
+    Initialize client structure:
+        - Set address family to AF_INET
+        - Set port to 9009
+        - Set IP address to 127.0.0.1 (localhost)
+
+    Connect to server
+    If connection fails, print "Connection failed" and exit
+
+    Print "Client - with individual acknowledgment scheme"
+
+    Initialize:
+        - Message buffer for acknowledgments
+        - Flag to simulate packet loss
+
+    FOR each message from 0 to 9:
+        Clear buffers
+
+        IF packet 8 and flag is set THEN
+            Simulate packet loss by skipping read
+            Reset flag
+        ELSE
+            Read message from server
+
+        IF received message is out of order THEN
+            Print "Discarded as out of order"
+            Decrement counter to request retransmission
+        ELSE
+            Print received message
+            Construct acknowledgment "acknowledgementof-<i>"
+            Send acknowledgment to server
+
+    Close socket
+END

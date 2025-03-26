@@ -1,0 +1,76 @@
+Server:
+BEGIN
+    Create a TCP socket
+
+    Initialize server structure:
+        - Set address family to AF_INET
+        - Set port to 9009
+        - Bind the socket
+
+    If binding fails, print "Binding failed" and exit
+
+    Listen for client connection
+    Accept client connection
+
+    Print "Server Up - Selective Repeat Scheme"
+
+    Initialize:
+        - Message buffer for sending messages
+        - Timer for timeouts
+        - Array to track received acknowledgments
+
+    WHILE total acknowledged < 9:
+        FOR each window of 3 messages:
+            Construct and send each message
+
+        FOR each message in the window:
+        (Retry until acknowledgment is received)
+            Wait for acknowledgment using `select()`
+            IF timeout occurs:
+                Resend the lost message
+            ELSE IF acknowledgment is received:
+                IF acknowledgment is corrupted:
+                    Resend the corresponding message
+                ELSE:
+                    Increment the total acknowledged messages
+
+    Close socket connection
+END
+Client:
+BEGIN
+    Create a TCP socket
+
+    Initialize client structure:
+        - Set address family to AF_INET
+        - Set port to 9009
+        - Connect to the server
+
+    If connection fails, print "Connection failed" and exit
+
+    Print "Client - with individual acknowledgement scheme"
+
+    Initialize:
+        - Acknowledgment message templates
+        - Buffer for received messages
+        - Counter for tracking received messages
+        - Fault simulation function
+
+    WHILE count < 8:
+        Clear buffer
+
+        IF simulating message loss:
+            Skip reading and continue
+
+        Read message from server
+
+        Print received message
+
+        Simulate corruption with a probability of 25%
+
+        IF message is corrupted:
+            Send a negative acknowledgment
+        ELSE:
+            Send a positive acknowledgment and increment count
+
+    Close socket connection
+END

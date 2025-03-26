@@ -1,0 +1,27 @@
+BEGIN
+    Define total number of packets
+    Function randm(a) generates a random packet size
+    
+    Initialize:
+        - Packet sizes array
+        - Remaining packet size variable
+        - User-defined output rate and bucket size
+
+    Generate random packet sizes (between 10 to 60 bytes)
+
+    Print generated packet sizes
+
+    Get user input:
+        - Output rate
+        - Bucket size
+
+    FOR each packet:
+        IF (packet size + remaining size) exceeds bucket capacity:
+            - Reject the packet
+        ELSE:
+            - Add packet size to remaining size
+            - Simulate transmission in time units
+            - Send packets based on output rate until empty
+            - Display transmission progress
+
+END
