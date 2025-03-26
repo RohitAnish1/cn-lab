@@ -1,0 +1,8 @@
+How to Run
+Compile the server and client programs separately:
+gcc -o server server.c
+gcc -o client client.c
+Run the server program on the remote server:
+./server
+Run the client program on the same or another machine:
+./client
